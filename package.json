@@ -23,7 +23,9 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
+    "@google/genai": "^1.7.0",
     "electron-updater": "^6.3.9",
+    "moondream": "^0.1.1",
     "uiohook-napi": "^1.5.4"
   },
   "devDependencies": {
