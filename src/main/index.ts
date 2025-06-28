@@ -236,11 +236,6 @@ async function wait(ms: number): Promise<void> {
 }
 
 async function startTutorial(mainWindow: BrowserWindow): Promise<void> {
-  mainWindow.webContents.send('update-assistant-text', 'I will now open Google Chrome and navigate to the NYC.gov website for you.')
-
-  // const link = "http://portal.311.nyc.gov/sr-step/?id=5e0bd107-3a54-f011-95f3-7c1e52a1da33&stepid=8f39d3a3-cd7f-e811-a83f-000d3a33b3a3"
-  // visitWebsite(link)
-
   await wait(2000) // Wait for 2 seconds
 
   const primaryScreen = await determine_primary_screen()
@@ -316,8 +311,22 @@ app.whenReady().then(() => {
   uIOhook.start()
   const mainWindow = createWindow()
 
+
+
+
+
+
   // Start the tutorial once the window is ready
   mainWindow.webContents.once('dom-ready', () => {
+
+  // Open a new tab on the browser given that link and inform user what is happening
+  // mainWindow.webContents.send('update-assistant-text', 'I will now open Google Chrome and navigate to the NYC.gov website for you.')
+  // const link = "http://portal.311.nyc.gov/sr-step/?id=5e0bd107-3a54-f011-95f3-7c1e52a1da33&stepid=8f39d3a3-cd7f-e811-a83f-000d3a33b3a3"
+  // visitWebsite(link)
+  // Before start Tutorial, the page the user is on SHOULD BE A FORM AND NOT A ARTICLE PAGE!
+  // Implement this: Start Tutorial should be activated by a button on the top right hand corner and not automatically!
+  // Ask Gemini2.5-pro Agent on Cursor in case you are stuck!
+  
     startTutorial(mainWindow)
   })
 
