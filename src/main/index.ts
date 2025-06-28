@@ -9,8 +9,7 @@ import { ChatState, sendInitialMessage, sendMessage } from './chat'
 import { OpenAIClient } from './openai_client'
 
 import * as fs from "node:fs"
-import { GoogleGenAI } from "@google/genai";
-
+import { GoogleGenAI, Type } from "@google/genai";
 // Moondream model initialization
 const model = new vl({ apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlfaWQiOiI5ZGRmMTI5Mi1kYTRjLTQxMTktOGMwZC05NjNhOTFiMzgxMGIiLCJvcmdfaWQiOiJub21QVmNWZ08weGE0OEhLWHR3WVh0dVZyZE9rNGhqaSIsImlhdCI6MTc1MTAwMzkxMywidmVyIjoxfQ.QDcCFnf2v7eXNQTt0PFwU5rx-sDa3lhzJruGXy-xw_Y' })
 let chat = new ChatState(process.env.GET_RESOURCES_URL || "http://localhost:8000/resources")
@@ -62,11 +61,11 @@ class WhatToDoNext {
     
     You are given a screenshot of what the user is currently seeing and some background on what the user has already done in the past. You will now use your judgment to figure out what the next step of the process will be. Here are your following options:
 
-1. Advise User to Click on a Button. If you choose this option, describe in words where exactly on the screen the user must click.
+1. Advise User to Click on a Button. If you choose this option, describe in words where exactly on the screen the user must click in the final answer. Also include in the coordinates portion of your answer the coordinates expressed in x/y coordinates of where the user must click according to your final answer. The coordinates shall be expressed as a decimal number between 0 and 1. (0,0) represents the top left corner of the screen, (1, 0) represents the top right corner of the screen, (0, 1) represents the bottom left corner of the screen, (1, 1) represents the bottom right corner of the screen.
 
-2. Advise User to Scroll Down
+2. Advise User to Scroll Down. If you choose this option, coordinates should be null.
 
-3. Advise User to Start Typing
+3. Advise User to Start Typing. If you choose this option, coordinates should be null.
 
 Revised Tips to Determine the Next Step (in order of priority):
 
@@ -108,7 +107,8 @@ Response Format: "CLICK" - {Description in words of where exactly to click} , "S
     this.contents.push({ text: feedback })
   }
 
-  async what_to_do_next(): Promise<string> {
+
+  async what_to_do_next(): Promise<{ final_answer: string, coordinates: Point | null }> {
     try {
       const ai = new GoogleGenAI({
         apiKey: process.env.GEMINI_KEY
@@ -116,14 +116,37 @@ Response Format: "CLICK" - {Description in words of where exactly to click} , "S
       const response = await ai.models.generateContent({
         model: "gemini-2.5-pro",
         contents: this.contents,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              final_answer: {
+                type: Type.STRING,
+              }, 
+              coordinates: {
+                type: Type.OBJECT,
+                properties: {
+                  x: {
+                    type: Type.NUMBER,
+                  },
+                  y: {
+                    type: Type.NUMBER,
+                  }
+                },
+                nullable: true
+              }
+          }
+          }
+        }
       });
       if (response.text) {
-        return response.text;
+        return JSON.parse(response.text) as { final_answer: string, coordinates: Point | null };
       } else {
-        return "ERROR: No response from AI"
+        return { final_answer: "ERROR: No response from AI", coordinates: null }
       }
     } catch (error) {
-      return `ERROR: ${error instanceof Error ? error.message : String(error)}`
+      return { final_answer: `ERROR: ${error instanceof Error ? error.message : String(error)}`, coordinates: null }
     }
   }
 
@@ -270,24 +293,52 @@ async function instructUser(mainWindow: BrowserWindow, url: string, context: str
   visitWebsite(url)
   await wait(2000) // Wait for 2 seconds
   
-  const primaryScreen = await determine_primary_screen()
   let whatToDoNext = new WhatToDoNext(url, context)
+  
+  const primaryScreen = await determine_primary_screen()
   whatToDoNext.screenshot_and_add_to_content(primaryScreen)
   const nextStep = await whatToDoNext.what_to_do_next()
-  mainWindow.webContents.send('update-assistant-text', nextStep)
+  mainWindow.webContents.send('update-assistant-text', nextStep.final_answer)
+
+  let clicked_pos = null as Point | null
+
+  let pos = nextStep.coordinates
+  if (pos) {
+    instruct_user(mainWindow, pos, nextStep.final_answer)
+    clicked_pos = await waitForClickNear(pos, 25)
+
+    // remove the visual cue
+    mainWindow.webContents.send('remove-visual-cue')
+
+    mainWindow.webContents.send('update-assistant-text', 'Great job! You clicked the button. Now I\'ll look for the next step.')
+  }
 
   let clickListener = async () => {
-    console.log("Click detected")
-    await wait(1000)
-    const primaryScreen = await determine_primary_screen()
-    whatToDoNext.screenshot_and_add_to_content(primaryScreen)
-    const nextStep = await whatToDoNext.what_to_do_next()
-    console.log("end instruction", endInstruction)
-    if (!endInstruction) {
-      console.log("Seems like the user has restarted the chat. Returning...")
-      return
+    await wait(1000)    
+    if (clicked_pos != null) {
+      const primaryScreen = await determine_primary_screen()
+      whatToDoNext.screenshot_and_add_to_content(primaryScreen)
+      const nextStep = await whatToDoNext.what_to_do_next()
+
+      if (!endInstruction) {
+        console.log("Seems like the user has restarted the chat. Returning...")
+        return
+      }
+      
+      mainWindow.webContents.send('update-assistant-text', nextStep.final_answer)
+  
+      let pos = nextStep.coordinates
+      if (pos) {
+        instruct_user(mainWindow, pos, nextStep.final_answer)
+        clicked_pos = await waitForClickNear(pos, 25)
+
+        // remove the visual cue
+        mainWindow.webContents.send('remove-visual-cue')
+
+        mainWindow.webContents.send('update-assistant-text', 'Great job! You clicked the button. Now I\'ll look for the next step.')
+      }
+      clicked_pos = null
     }
-    mainWindow.webContents.send('update-assistant-text', nextStep)
   }
   
   endInstruction = () => {
@@ -298,41 +349,6 @@ async function instructUser(mainWindow: BrowserWindow, url: string, context: str
 
   uIOhook.on('mousedown', clickListener)
 
-  // try {
-  //   const primaryScreen = await determine_primary_screen()
-  //   const image = take_screenshot(primaryScreen)
-    
-  //   let pos = await find_coord(image, 'Report Problems')
-  //   let visual_pos = pos
-  //   if (pos) {
-  //     visual_pos = {
-  //       x: pos.x,
-  //       y: pos.y + 25
-  //     }
-  //   }
-
-  //   if (visual_pos && pos) {
-  //     instruct_user(
-  //       mainWindow,
-  //       visual_pos,
-  //       'Found it! Please click on the "Report Problems" button, which I have highlighted for you.'
-  //     )
-
-  //     // Build a function that will detect if the user has clicked on pos within a 25px radius
-  //     await waitForClickNear(pos, 25)
-
-
-  //     // remove the visual cue
-  //     mainWindow.webContents.send('remove-visual-cue')
-  //     mainWindow.webContents.send(
-  //       'update-assistant-text',
-  //       "Great job! You clicked the button. Now I'll look for the next step."
-  //     )
-  //   }
-  // } catch (e) {
-  //   console.error('Error in CV loop:', e)
-  //   mainWindow.webContents.send('update-assistant-text', 'I ran into a problem. Trying again.')
-  // }
 }
 
 async function handleSendMessageToChat(mainWindow: BrowserWindow, message: string, chat: ChatState, openai: OpenAIClient) {
@@ -387,8 +403,22 @@ app.whenReady().then(() => {
   uIOhook.start()
   const mainWindow = createWindow()
 
+
+
+
+
+
   // Start the tutorial once the window is ready
   mainWindow.webContents.once('dom-ready', () => {
+
+  // Open a new tab on the browser given that link and inform user what is happening
+  // mainWindow.webContents.send('update-assistant-text', 'I will now open Google Chrome and navigate to the NYC.gov website for you.')
+  // const link = "http://portal.311.nyc.gov/sr-step/?id=5e0bd107-3a54-f011-95f3-7c1e52a1da33&stepid=8f39d3a3-cd7f-e811-a83f-000d3a33b3a3"
+  // visitWebsite(link)
+  // Before start Tutorial, the page the user is on SHOULD BE A FORM AND NOT A ARTICLE PAGE!
+  // Implement this: Start Tutorial should be activated by a button on the top right hand corner and not automatically!
+  // Ask Gemini2.5-pro Agent on Cursor in case you are stuck!
+
     startTutorial(mainWindow)
   })
 
