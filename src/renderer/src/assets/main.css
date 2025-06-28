@@ -1,0 +1,71 @@
+html,
+body,
+#root {
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  overflow: hidden;
+  user-select: none;
+}
+
+.visual-cue {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(200,150,0,0.75);
+  background-color: rgba(255,255,0,0.5);
+  border-radius: 50%;
+}
+
+.dialogue-box-container {
+  position: absolute;
+  width: 400px;
+}
+
+.dialogue-box {
+  background-color: rgba(50, 50, 50, 0.8);
+  color: white;
+  padding: 20px;
+  border-radius: 15px;
+  cursor: move;
+  font-family: sans-serif;
+  font-size: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dialogue-box p {
+  margin: 0;
+}
+
+.chat-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.microphone-icon {
+  position: absolute;
+  left: 15px;
+  color: #999;
+}
+
+.chat-input {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  padding-left: 50px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(30, 30, 30, 0.8);
+  color: white;
+  resize: none;
+  font-family: sans-serif;
+  box-sizing: border-box;
+}
+
+.chat-input:focus {
+  outline: none;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
