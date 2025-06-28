@@ -45,28 +45,21 @@ export class ChatState {
     return this.conversationHistory
   }
 
-  getContext(): string {
-    let lastAIResponse = 'No response yet.'
-    if (this.conversationHistory.length > 0) {
-      const AIResponses = this.conversationHistory.filter(message => message.role === 'assistant')
-      lastAIResponse = AIResponses[AIResponses.length - 1].content
-    }
+  getContext(url: string): string {
+    let conversationHistory = this.conversationHistory.map(message => {
+      if (message.role === 'assistant') {
+        return `Assistant: ${this.parseResponse(message.content).message}`
+      } else {
+        return `User: ${message.content}`
+      }
+    }).join('\n')
+
     return `
     ${intro_prompt}
 
-    ${JSON.stringify(this.conversationHistory)}
+    ${conversationHistory}
 
-    To help the user, you used a search engine to collect relevant information about NYC's rules and services. Here is your search history:
-    
-    ${JSON.stringify(this.searchHistory)}
-
-    You also requested the full text contents of the following pages:
-
-    ${JSON.stringify(this.fullTextRequests)}
-
-    You finally arrived at the following response:
-
-    ${lastAIResponse}
+    You finally navigated the user to the current page, located at ${url}.
     `
   }
 

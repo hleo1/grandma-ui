@@ -406,7 +406,7 @@ app.whenReady().then(() => {
   ipcMain.on('accept-solution', (event, url: string) => {
     stillChatting = false
     mainWindow.webContents.send('suggest-solution-url', '')
-    instructUser(mainWindow, url, chat.getContext())
+    instructUser(mainWindow, url, chat.getContext(url))
   })
 
   ipcMain.on('send-message', (event, message: string) => {
