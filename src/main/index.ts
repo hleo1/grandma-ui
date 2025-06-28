@@ -110,7 +110,7 @@ Response Format: "CLICK" - {Description in words of where exactly to click} , "S
   async what_to_do_next(): Promise<string> {
     try {
       const ai = new GoogleGenAI({
-        apiKey: "AIzaSyCKnc_vT7f1mVJs5xE4dIU8jlcqF3sSq9E"
+        apiKey: process.env.GEMINI_KEY
       });
       const response = await ai.models.generateContent({
         model: "gemini-2.5-pro",

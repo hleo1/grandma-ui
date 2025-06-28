@@ -12,7 +12,8 @@ export default defineConfig({
     },
     define: {
       'process.env.OPENAI_API_KEY': JSON.stringify(process.env.OPENAI_API_KEY),
-      'process.env.GET_RESOURCES_URL': JSON.stringify(process.env.GET_RESOURCES_URL)
+      'process.env.GET_RESOURCES_URL': JSON.stringify(process.env.GET_RESOURCES_URL),
+      'process.env.GEMINI_KEY': JSON.stringify(process.env.GEMINI_KEY)
     }
   },
   preload: {

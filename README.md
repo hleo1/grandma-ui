@@ -17,20 +17,20 @@ $ npm install
 ### Development
 
 ```bash
-$ npm run dev
+$ OPENAI_API_KEY=<key> GEMINI_KEY=<key> npm run dev
 ```
 
 ### Build
 
 ```bash
 # For windows
-$ npm run build:win
+$ OPENAI_API_KEY=<key> GEMINI_KEY=<key> npm run build:win
 
 # For macOS
-$ npm run build:mac
+$ OPENAI_API_KEY=<key> GEMINI_KEY=<key> npm run build:mac
 
 # For Linux
-$ npm run build:linux
+$ OPENAI_API_KEY=<key> GEMINI_KEY=<key> npm run build:linux
 ```
 
 ## Understanding the Architecture
