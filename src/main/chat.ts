@@ -111,22 +111,7 @@ export class ChatState {
   }
   
   async addAIResponse(response: string): Promise<AIResponse> {
-    let parsedResponse: AIResponse;
-    try {
-      parsedResponse = JSON.parse(response);
-    } catch (error) {
-      console.error('Failed to parse response as JSON:', error);
-      parsedResponse = {
-        user_problem_summary: '',
-        relevant_rules_and_services_summary: '',
-        enough_information_to_answer_question: false,
-        message: '',
-        search_queries: [],
-        full_text_requests: [],
-        user_satisfied: false,
-        solution_url: ''
-      }
-    }
+    const parsedResponse = this.parseResponse(response)
     this.conversationHistory = [...this.conversationHistory, {
       role: 'assistant',
       content: response,
