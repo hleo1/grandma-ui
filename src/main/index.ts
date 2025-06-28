@@ -282,15 +282,21 @@ async function instructUser(mainWindow: BrowserWindow, url: string, context: str
     const primaryScreen = await determine_primary_screen()
     whatToDoNext.screenshot_and_add_to_content(primaryScreen)
     const nextStep = await whatToDoNext.what_to_do_next()
+    console.log("end instruction", endInstruction)
+    if (!endInstruction) {
+      console.log("Seems like the user has restarted the chat. Returning...")
+      return
+    }
     mainWindow.webContents.send('update-assistant-text', nextStep)
   }
-
-  uIOhook.on('mousedown', clickListener)
-
+  
   endInstruction = () => {
     uIOhook.removeListener('mousedown', clickListener)
     console.log("Successfully ended instruction")
+    endInstruction = null
   }
+
+  uIOhook.on('mousedown', clickListener)
 
   // try {
   //   const primaryScreen = await determine_primary_screen()
@@ -413,6 +419,7 @@ app.whenReady().then(() => {
     if (endInstruction) {
       endInstruction()
     }
+    mainWindow.webContents.send('suggest-solution-url', '')
     stillChatting = true
     chat = new ChatState(process.env.GET_RESOURCES_URL || "http://localhost:8000/resources")
     startTutorial(mainWindow)
