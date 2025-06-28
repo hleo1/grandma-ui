@@ -5,10 +5,17 @@ import icon from '../../resources/icon.png?asset'
 import { exec } from 'child_process'
 import { vl } from 'moondream'
 import { uIOhook } from 'uiohook-napi'
+import { ChatState, sendInitialMessage, sendMessage } from './chat'
+import { OpenAIClient } from './openai_client'
+
 import * as fs from "node:fs"
 import { GoogleGenAI } from "@google/genai";
+
 // Moondream model initialization
 const model = new vl({ apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlfaWQiOiI5ZGRmMTI5Mi1kYTRjLTQxMTktOGMwZC05NjNhOTFiMzgxMGIiLCJvcmdfaWQiOiJub21QVmNWZ08weGE0OEhLWHR3WVh0dVZyZE9rNGhqaSIsImlhdCI6MTc1MTAwMzkxMywidmVyIjoxfQ.QDcCFnf2v7eXNQTt0PFwU5rx-sDa3lhzJruGXy-xw_Y' })
+let chat = new ChatState(process.env.GET_RESOURCES_URL || "http://localhost:8000/resources")
+const openai = new OpenAIClient()
+let stillChatting = true
 
 class StorySoFar {
   mainStory: string;
@@ -40,9 +47,19 @@ type ContentItem =
 class WhatToDoNext {
   contents: ContentItem[]
 
-  constructor() {
+  constructor(url: string, context: string) {
     let system_prompt = `
-    You are a UI interaction helper bot for the disabled/elderly to fill out a complaint form to NYC's 311 reporting website. You are given a screenshot of what the user is currently seeing and some background on what the user has already done in the past. You will now use your judgment to figure out what the next step of the process will be. Here are your following options:
+    You are a UI interaction helper bot for the disabled/elderly to fill out a complaint form to NYC's 311 reporting website.
+
+    Here is the context of your interaction with the user:
+    <CONTEXT>
+    ${context}
+    </CONTEXT>
+
+    The user finally decided to visit the following page:
+    ${url}
+    
+    You are given a screenshot of what the user is currently seeing and some background on what the user has already done in the past. You will now use your judgment to figure out what the next step of the process will be. Here are your following options:
 
 1. Advise User to Click on a Button. If you choose this option, describe in words where exactly on the screen the user must click.
 
@@ -236,15 +253,18 @@ async function wait(ms: number): Promise<void> {
 }
 
 async function startTutorial(mainWindow: BrowserWindow): Promise<void> {
+  mainWindow.webContents.send('set-accept-message', true)
+  mainWindow.webContents.send('update-assistant-text', 'How can I help?')
+}
+
+async function instructUser(mainWindow: BrowserWindow, url: string, context: string) {
   mainWindow.webContents.send('update-assistant-text', 'I will now open Google Chrome and navigate to the NYC.gov website for you.')
 
-  // const link = "http://portal.311.nyc.gov/sr-step/?id=5e0bd107-3a54-f011-95f3-7c1e52a1da33&stepid=8f39d3a3-cd7f-e811-a83f-000d3a33b3a3"
-  // visitWebsite(link)
-
+  visitWebsite(url)
   await wait(2000) // Wait for 2 seconds
-
+  
   const primaryScreen = await determine_primary_screen()
-  let whatToDoNext = new WhatToDoNext()
+  let whatToDoNext = new WhatToDoNext(url, context)
   whatToDoNext.screenshot_and_add_to_content(primaryScreen)
   const nextStep = await whatToDoNext.what_to_do_next()
   mainWindow.webContents.send('update-assistant-text', nextStep)
@@ -299,6 +319,41 @@ async function startTutorial(mainWindow: BrowserWindow): Promise<void> {
   // }
 }
 
+async function handleSendMessageToChat(mainWindow: BrowserWindow, message: string, chat: ChatState, openai: OpenAIClient) {
+  mainWindow.webContents.send('set-accept-message', false)
+  
+  const changeAssistantText = (text: string) => {
+    mainWindow.webContents.send('update-assistant-text', text)
+  }
+
+  const sendPrompt = async (prompt: string) => {
+    return await openai.sendPrompt(prompt)
+  }
+
+  const suggestSolution = (url: string) => {
+    mainWindow.webContents.send('suggest-solution-url', url)
+  }
+
+  suggestSolution("")
+
+  if (chat.getConversationHistory().length === 0) {
+    const initialResponse = await sendInitialMessage(message, chat, sendPrompt)
+    if (initialResponse.message) {
+      changeAssistantText(initialResponse.message)
+    }
+  }
+
+  const response = await sendMessage(message, chat, sendPrompt)
+  if (response.message) {
+    changeAssistantText(response.message)
+  }
+  if (response.solution_url) {
+    suggestSolution(response.solution_url)
+  }
+  
+  mainWindow.webContents.send('set-accept-message', true)
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -330,6 +385,24 @@ app.whenReady().then(() => {
   ipcMain.on('mouse-leave-interactive-area', () => {
     mainWindow.setIgnoreMouseEvents(true, { forward: true })
     mainWindow.setFocusable(false)
+  })
+
+  ipcMain.on('accept-solution', (event, url: string) => {
+    stillChatting = false
+    mainWindow.webContents.send('suggest-solution-url', '')
+    instructUser(mainWindow, url, chat.getContext())
+  })
+
+  ipcMain.on('send-message', (event, message: string) => {
+    if (stillChatting) {
+      handleSendMessageToChat(mainWindow, message, chat, openai)
+    }
+  })
+
+  ipcMain.on('restart-chat', () => {
+    stillChatting = true
+    chat = new ChatState(process.env.GET_RESOURCES_URL || "http://localhost:8000/resources")
+    startTutorial(mainWindow)
   })
 
   globalShortcut.register('CommandOrControl+]', () => {
