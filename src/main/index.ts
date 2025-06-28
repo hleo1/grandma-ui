@@ -6,7 +6,7 @@ import { exec } from 'child_process'
 import { vl } from 'moondream'
 import { uIOhook } from 'uiohook-napi'
 import * as fs from "node:fs"
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 // Moondream model initialization
 const model = new vl({ apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlfaWQiOiI5ZGRmMTI5Mi1kYTRjLTQxMTktOGMwZC05NjNhOTFiMzgxMGIiLCJvcmdfaWQiOiJub21QVmNWZ08weGE0OEhLWHR3WVh0dVZyZE9rNGhqaSIsImlhdCI6MTc1MTAwMzkxMywidmVyIjoxfQ.QDcCFnf2v7eXNQTt0PFwU5rx-sDa3lhzJruGXy-xw_Y' })
 
@@ -44,11 +44,11 @@ class WhatToDoNext {
     let system_prompt = `
     You are a UI interaction helper bot for the disabled/elderly to fill out a complaint form to NYC's 311 reporting website. You are given a screenshot of what the user is currently seeing and some background on what the user has already done in the past. You will now use your judgment to figure out what the next step of the process will be. Here are your following options:
 
-1. Advise User to Click on a Button. If you choose this option, describe in words where exactly on the screen the user must click.
+1. Advise User to Click on a Button. If you choose this option, describe in words where exactly on the screen the user must click in the final answer. Also include in the coordinates portion of your answer the coordinates expressed in x/y coordinates of where the user must click according to your final answer. The coordinates shall be expressed as a decimal number between 0 and 1. (0,0) represents the top left corner of the screen, (1, 0) represents the top right corner of the screen, (0, 1) represents the bottom left corner of the screen, (1, 1) represents the bottom right corner of the screen.
 
-2. Advise User to Scroll Down
+2. Advise User to Scroll Down. If you choose this option, coordinates should be null.
 
-3. Advise User to Start Typing
+3. Advise User to Start Typing. If you choose this option, coordinates should be null.
 
 Revised Tips to Determine the Next Step (in order of priority):
 
@@ -90,22 +90,46 @@ Response Format: "CLICK" - {Description in words of where exactly to click} , "S
     this.contents.push({ text: feedback })
   }
 
-  async what_to_do_next(): Promise<string> {
+
+  async what_to_do_next(): Promise<{ final_answer: string, coordinates: Point | null }> {
     try {
       const ai = new GoogleGenAI({
-        apiKey: "AIzaSyCKnc_vT7f1mVJs5xE4dIU8jlcqF3sSq9E"
+        apiKey: "AIzaSyBk"
       });
       const response = await ai.models.generateContent({
         model: "gemini-2.5-pro",
         contents: this.contents,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              final_answer: {
+                type: Type.STRING,
+              }, 
+              coordinates: {
+                type: Type.OBJECT,
+                properties: {
+                  x: {
+                    type: Type.NUMBER,
+                  },
+                  y: {
+                    type: Type.NUMBER,
+                  }
+                },
+                nullable: true
+              }
+          }
+          }
+        }
       });
       if (response.text) {
-        return response.text;
+        return JSON.parse(response.text) as { final_answer: string, coordinates: Point | null };
       } else {
-        return "ERROR: No response from AI"
+        return { final_answer: "ERROR: No response from AI", coordinates: null }
       }
     } catch (error) {
-      return `ERROR: ${error instanceof Error ? error.message : String(error)}`
+      return { final_answer: `ERROR: ${error instanceof Error ? error.message : String(error)}`, coordinates: null }
     }
   }
 
@@ -236,23 +260,49 @@ async function wait(ms: number): Promise<void> {
 }
 
 async function startTutorial(mainWindow: BrowserWindow): Promise<void> {
+  let whatToDoNext = new WhatToDoNext()
   await wait(2000) // Wait for 2 seconds
 
   const primaryScreen = await determine_primary_screen()
-  let whatToDoNext = new WhatToDoNext()
   whatToDoNext.screenshot_and_add_to_content(primaryScreen)
   const nextStep = await whatToDoNext.what_to_do_next()
-  mainWindow.webContents.send('update-assistant-text', nextStep)
+  mainWindow.webContents.send('update-assistant-text', nextStep.final_answer)
 
-  // when a click is detected, wait 1 second, take a screenshot and add it to the content
+  let clicked_pos = null as Point | null
+
+  let pos = nextStep.coordinates
+  if (pos) {
+    instruct_user(mainWindow, pos, nextStep.final_answer)
+    clicked_pos = await waitForClickNear(pos, 25)
+
+    // remove the visual cue
+    mainWindow.webContents.send('remove-visual-cue')
+
+    mainWindow.webContents.send('update-assistant-text', 'Great job! You clicked the button. Now I\'ll look for the next step.')
+  }
+
   uIOhook.on('mousedown', async () => {
-    await wait(1000)
-    const primaryScreen = await determine_primary_screen()
-    whatToDoNext.screenshot_and_add_to_content(primaryScreen)
-    const nextStep = await whatToDoNext.what_to_do_next()
-    mainWindow.webContents.send('update-assistant-text', nextStep)
-  })
+    await wait(1000)    
+    if (clicked_pos != null) {
+      const primaryScreen = await determine_primary_screen()
+      whatToDoNext.screenshot_and_add_to_content(primaryScreen)
+      const nextStep = await whatToDoNext.what_to_do_next()
+      mainWindow.webContents.send('update-assistant-text', nextStep.final_answer)
+  
+      let pos = nextStep.coordinates
+      if (pos) {
+        instruct_user(mainWindow, pos, nextStep.final_answer)
+        clicked_pos = await waitForClickNear(pos, 25)
 
+        // remove the visual cue
+        mainWindow.webContents.send('remove-visual-cue')
+
+        mainWindow.webContents.send('update-assistant-text', 'Great job! You clicked the button. Now I\'ll look for the next step.')
+      }
+      clicked_pos = null
+    }
+  })
+}
 
 
 
@@ -326,7 +376,7 @@ app.whenReady().then(() => {
   // Before start Tutorial, the page the user is on SHOULD BE A FORM AND NOT A ARTICLE PAGE!
   // Implement this: Start Tutorial should be activated by a button on the top right hand corner and not automatically!
   // Ask Gemini2.5-pro Agent on Cursor in case you are stuck!
-  
+
     startTutorial(mainWindow)
   })
 
