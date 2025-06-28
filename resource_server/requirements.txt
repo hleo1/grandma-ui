@@ -1,0 +1,6 @@
+transformers==4.46.3
+torch==2.5.1
+thirdai[neural_db_v2]==0.9.32
+fastapi
+uvicorn[standard]
+pydotenv
