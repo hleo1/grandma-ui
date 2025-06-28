@@ -238,60 +238,65 @@ async function wait(ms: number): Promise<void> {
 async function startTutorial(mainWindow: BrowserWindow): Promise<void> {
   mainWindow.webContents.send('update-assistant-text', 'I will now open Google Chrome and navigate to the NYC.gov website for you.')
 
-  let initial_story = "A 75 year old Grandma has determined that noise from her neighbor's apartment has become excessive particularly past 10pm on Wednesdays."
-
-  const storySoFar = new StorySoFar(initial_story)
-
-  const link = "http://portal.311.nyc.gov/sr-step/?id=5e0bd107-3a54-f011-95f3-7c1e52a1da33&stepid=8f39d3a3-cd7f-e811-a83f-000d3a33b3a3"
-  visitWebsite(link)
+  // const link = "http://portal.311.nyc.gov/sr-step/?id=5e0bd107-3a54-f011-95f3-7c1e52a1da33&stepid=8f39d3a3-cd7f-e811-a83f-000d3a33b3a3"
+  // visitWebsite(link)
 
   await wait(2000) // Wait for 2 seconds
 
+  const primaryScreen = await determine_primary_screen()
+  let whatToDoNext = new WhatToDoNext()
+  whatToDoNext.screenshot_and_add_to_content(primaryScreen)
+  const nextStep = await whatToDoNext.what_to_do_next()
+  mainWindow.webContents.send('update-assistant-text', nextStep)
 
-  // Figure out what to do next based on story so far and screenshot
-
-
-
-
-
-
-  mainWindow.webContents.send('update-assistant-text', 'Now, I am looking for the "Report Problems" button on the page.')
-
-  try {
+  // when a click is detected, wait 1 second, take a screenshot and add it to the content
+  uIOhook.on('mousedown', async () => {
+    await wait(1000)
     const primaryScreen = await determine_primary_screen()
-    const image = take_screenshot(primaryScreen)
+    whatToDoNext.screenshot_and_add_to_content(primaryScreen)
+    const nextStep = await whatToDoNext.what_to_do_next()
+    mainWindow.webContents.send('update-assistant-text', nextStep)
+  })
+
+
+
+
+
+  // try {
+  //   const primaryScreen = await determine_primary_screen()
+  //   const image = take_screenshot(primaryScreen)
     
-    let pos = await find_coord(image, 'Report Problems')
-    let visual_pos = pos
-    if (pos) {
-      visual_pos = {
-        x: pos.x,
-        y: pos.y + 25
-      }
-    }
+  //   let pos = await find_coord(image, 'Report Problems')
+  //   let visual_pos = pos
+  //   if (pos) {
+  //     visual_pos = {
+  //       x: pos.x,
+  //       y: pos.y + 25
+  //     }
+  //   }
 
-    if (visual_pos && pos) {
-      instruct_user(
-        mainWindow,
-        visual_pos,
-        'Found it! Please click on the "Report Problems" button, which I have highlighted for you.'
-      )
+  //   if (visual_pos && pos) {
+  //     instruct_user(
+  //       mainWindow,
+  //       visual_pos,
+  //       'Found it! Please click on the "Report Problems" button, which I have highlighted for you.'
+  //     )
 
-      // Build a function that will detect if the user has clicked on pos within a 25px radius
-      await waitForClickNear(pos, 25)
+  //     // Build a function that will detect if the user has clicked on pos within a 25px radius
+  //     await waitForClickNear(pos, 25)
 
 
-      // remove the visual cue
-      mainWindow.webContents.send('remove-visual-cue')
-      mainWindow.webContents.send(
-        'update-assistant-text',
-        "Great job! You clicked the button. Now I'll look for the next step."
-      )
-    }
-  } catch (e) {
-    console.error('Error in CV loop:', e)
-    mainWindow.webContents.send('update-assistant-text', 'I ran into a problem. Trying again.')
-  }
+  //     // remove the visual cue
+  //     mainWindow.webContents.send('remove-visual-cue')
+  //     mainWindow.webContents.send(
+  //       'update-assistant-text',
+  //       "Great job! You clicked the button. Now I'll look for the next step."
+  //     )
+  //   }
+  // } catch (e) {
+  //   console.error('Error in CV loop:', e)
+  //   mainWindow.webContents.send('update-assistant-text', 'I ran into a problem. Trying again.')
+  // }
 }
 
 // This method will be called when Electron has finished
