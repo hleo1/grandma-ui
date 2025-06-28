@@ -5,6 +5,8 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   mouseEnter: () => ipcRenderer.send('mouse-enter-interactive-area'),
   mouseLeave: () => ipcRenderer.send('mouse-leave-interactive-area'),
+  acceptSolution: (url: string) => ipcRenderer.send('accept-solution', url),
+  sendMessage: (message: string) => ipcRenderer.send('send-message', message),
   onFocusChatInput: (callback: () => void) => {
     ipcRenderer.on('focus-chat-input', callback)
     return () => ipcRenderer.removeListener('focus-chat-input', callback)
@@ -13,6 +15,16 @@ const api = {
     const handler = (_event, text): void => callback(text)
     ipcRenderer.on('update-assistant-text', handler)
     return () => ipcRenderer.removeListener('update-assistant-text', handler)
+  },
+  onSetAcceptMessage: (callback: (accept: boolean) => void) => {
+    const handler = (_event, accept): void => callback(accept)
+    ipcRenderer.on('set-accept-message', handler)
+    return () => ipcRenderer.removeListener('set-accept-message', handler)
+  },
+  onSuggestSolutionUrl: (callback: (url: string) => void) => {
+    const handler = (_event, url): void => callback(url)
+    ipcRenderer.on('suggest-solution-url', handler)
+    return () => ipcRenderer.removeListener('suggest-solution-url', handler)
   },
   onShowVisualCue: (callback: (pos: { x: number; y: number }) => void) => {
     const handler = (_event, pos): void => callback(pos)

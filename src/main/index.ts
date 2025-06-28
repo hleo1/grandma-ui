@@ -5,9 +5,13 @@ import icon from '../../resources/icon.png?asset'
 import { exec } from 'child_process'
 import { vl } from 'moondream'
 import { uIOhook } from 'uiohook-napi'
+import { ChatState, sendInitialMessage, sendMessage } from './chat'
+import { OpenAIClient } from './openai_client'
 
 // Moondream model initialization
 const model = new vl({ apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlfaWQiOiI5ZGRmMTI5Mi1kYTRjLTQxMTktOGMwZC05NjNhOTFiMzgxMGIiLCJvcmdfaWQiOiJub21QVmNWZ08weGE0OEhLWHR3WVh0dVZyZE9rNGhqaSIsImlhdCI6MTc1MTAwMzkxMywidmVyIjoxfQ.QDcCFnf2v7eXNQTt0PFwU5rx-sDa3lhzJruGXy-xw_Y' })
+const chat = new ChatState(process.env.GET_RESOURCES_URL || "http://localhost:8000/resources")
+const openai = new OpenAIClient()
 
 interface Point {
   x: number
@@ -127,6 +131,19 @@ async function startTutorial(mainWindow: BrowserWindow): Promise<void> {
 
   await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for browser to open
 
+  mainWindow.webContents.send('set-accept-message', true)
+  mainWindow.webContents.send('update-assistant-text', 'Alright, now that the website is open, how can I help?')
+}
+
+async function instructUser(mainWindow: BrowserWindow, url: string, context: string) {
+  console.log("Instructing user", "URL: ", url)
+
+  if (process.platform === 'win32') {
+    exec(`start chrome "${url}"`)
+  } else {
+    shell.openExternal(url)
+  }
+  
   mainWindow.webContents.send('update-assistant-text', 'Now, I am looking for the "Report Problems" button on the page.')
 
   try {
@@ -166,6 +183,41 @@ async function startTutorial(mainWindow: BrowserWindow): Promise<void> {
   }
 }
 
+async function handleSendMessage(mainWindow: BrowserWindow, message: string, chat: ChatState, openai: OpenAIClient) {
+  mainWindow.webContents.send('set-accept-message', false)
+  
+  const changeAssistantText = (text: string) => {
+    mainWindow.webContents.send('update-assistant-text', text)
+  }
+
+  const sendPrompt = async (prompt: string) => {
+    return await openai.sendPrompt(prompt)
+  }
+
+  const suggestSolution = (url: string) => {
+    mainWindow.webContents.send('suggest-solution-url', url)
+  }
+
+  suggestSolution("")
+
+  if (chat.getConversationHistory().length === 0) {
+    const initialResponse = await sendInitialMessage(message, chat, sendPrompt)
+    if (initialResponse.message) {
+      changeAssistantText(initialResponse.message)
+    }
+  }
+
+  const response = await sendMessage(message, chat, sendPrompt)
+  if (response.message) {
+    changeAssistantText(response.message)
+  }
+  if (response.solution_url) {
+    suggestSolution(response.solution_url)
+  }
+  
+  mainWindow.webContents.send('set-accept-message', true)
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -197,6 +249,15 @@ app.whenReady().then(() => {
   ipcMain.on('mouse-leave-interactive-area', () => {
     mainWindow.setIgnoreMouseEvents(true, { forward: true })
     mainWindow.setFocusable(false)
+  })
+
+  ipcMain.on('accept-solution', (event, url: string) => {
+    mainWindow.webContents.send('suggest-solution-url', '')
+    instructUser(mainWindow, url, chat.getContext())
+  })
+
+  ipcMain.on('send-message', (event, message: string) => {
+    handleSendMessage(mainWindow, message, chat, openai)
   })
 
   globalShortcut.register('CommandOrControl+]', () => {

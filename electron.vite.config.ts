@@ -9,6 +9,10 @@ export default defineConfig({
       rollupOptions: {
         external: ['sharp', 'moondream']
       }
+    },
+    define: {
+      'process.env.OPENAI_API_KEY': JSON.stringify(process.env.OPENAI_API_KEY),
+      'process.env.GET_RESOURCES_URL': JSON.stringify(process.env.GET_RESOURCES_URL)
     }
   },
   preload: {

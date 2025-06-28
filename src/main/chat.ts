@@ -41,6 +41,35 @@ export class ChatState {
     this.getResourcesUrl = getResourcesUrl
   }
 
+  getConversationHistory(): ChatMessage[] {
+    return this.conversationHistory
+  }
+
+  getContext(): string {
+    let lastAIResponse = 'No response yet.'
+    if (this.conversationHistory.length > 0) {
+      const AIResponses = this.conversationHistory.filter(message => message.role === 'assistant')
+      lastAIResponse = AIResponses[AIResponses.length - 1].content
+    }
+    return `
+    ${intro_prompt}
+
+    ${JSON.stringify(this.conversationHistory)}
+
+    To help the user, you used a search engine to collect relevant information about NYC's rules and services. Here is your search history:
+    
+    ${JSON.stringify(this.searchHistory)}
+
+    You also requested the full text contents of the following pages:
+
+    ${JSON.stringify(this.fullTextRequests)}
+
+    You finally arrived at the following response:
+
+    ${lastAIResponse}
+    `
+  }
+
   getInitialPrompt(message: string): string {
     return `
     ${intro_prompt}
@@ -60,15 +89,15 @@ export class ChatState {
     return `
     ${intro_prompt}
 
-    ${this.conversationHistory}
+    ${JSON.stringify(this.conversationHistory)}
 
     ${search_engine_prompt}
 
-    ${this.searchHistory}
+    ${JSON.stringify(this.searchHistory)}
 
     ${full_text_request_prompt}
 
-    ${this.fullTextRequests}
+    ${JSON.stringify(this.fullTextRequests)}
 
     ${call_to_action_prompt}
     `
@@ -117,8 +146,8 @@ export class ChatState {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        search_queries: response.search_queries,
-        full_text_requests: response.full_text_requests
+        search_queries: response.search_queries || [],
+        full_text_requests: response.full_text_requests || []
       })
     })
     .then(res => res.json())
