@@ -7,6 +7,7 @@ const api = {
   mouseLeave: () => ipcRenderer.send('mouse-leave-interactive-area'),
   acceptSolution: (url: string) => ipcRenderer.send('accept-solution', url),
   sendMessage: (message: string) => ipcRenderer.send('send-message', message),
+  restartChat: () => ipcRenderer.send('restart-chat'),
   onFocusChatInput: (callback: () => void) => {
     ipcRenderer.on('focus-chat-input', callback)
     return () => ipcRenderer.removeListener('focus-chat-input', callback)

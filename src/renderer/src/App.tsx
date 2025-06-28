@@ -8,6 +8,7 @@ function App(): React.JSX.Element {
   const [boxPosition, setBoxPosition] = useState({ x: window.innerWidth - 420, y: 20 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [isRestartConfirming, setIsRestartConfirming] = useState(false)
   const chatInputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -59,6 +60,19 @@ function App(): React.JSX.Element {
 
   const handleMouseUp = () => {
     setIsDragging(false)
+  }
+
+  const handleRestartClick = () => {
+    if (isRestartConfirming) {
+      window.api.restartChat()
+      setIsRestartConfirming(false)
+    } else {
+      setIsRestartConfirming(true)
+      // Reset confirmation state after 5 seconds if not clicked
+      setTimeout(() => {
+        setIsRestartConfirming(false)
+      }, 5000)
+    }
   }
 
   return (
@@ -139,6 +153,15 @@ function App(): React.JSX.Element {
             />
           </div>
         }
+        <div className="restart-container">
+          <button 
+            className={`restart-button ${isRestartConfirming ? 'confirming' : ''}`}
+            onClick={handleRestartClick}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {isRestartConfirming ? 'Are you sure?' : 'Restart'}
+          </button>
+        </div>
       </div>
       
     </>
