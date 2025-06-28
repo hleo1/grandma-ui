@@ -16,6 +16,7 @@ const model = new vl({ apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlfaWQ
 let chat = new ChatState(process.env.GET_RESOURCES_URL || "http://localhost:8000/resources")
 const openai = new OpenAIClient()
 let stillChatting = true
+let endInstruction: () => void | null = null
 
 class StorySoFar {
   mainStory: string;
@@ -205,17 +206,22 @@ function waitForClickNear(pos: Point, radius: number): Promise<Point> {
 }
 
 function createWindow(): BrowserWindow {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize
-  // Create the browser window.
+  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize
+  const windowWidth = 420
+  const windowHeight = 700
+  
+  // Create the browser window with fixed size for UI elements
   const mainWindow = new BrowserWindow({
-    width,
-    height,
+    width: windowWidth,
+    height: windowHeight,
+    x: screenWidth - windowWidth,
+    y: 0,
     transparent: true,
     frame: false,
     show: true,
     alwaysOnTop: true,
     autoHideMenuBar: true,
-    focusable: false,
+    resizable: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -223,7 +229,8 @@ function createWindow(): BrowserWindow {
     }
   })
 
-  mainWindow.setIgnoreMouseEvents(true, { forward: true })
+  // Don't ignore mouse events since it's no longer a full-screen overlay
+  // mainWindow.setIgnoreMouseEvents(true, { forward: true })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
@@ -269,18 +276,21 @@ async function instructUser(mainWindow: BrowserWindow, url: string, context: str
   const nextStep = await whatToDoNext.what_to_do_next()
   mainWindow.webContents.send('update-assistant-text', nextStep)
 
-  // when a click is detected, wait 1 second, take a screenshot and add it to the content
-  uIOhook.on('mousedown', async () => {
+  let clickListener = async () => {
+    console.log("Click detected")
     await wait(1000)
     const primaryScreen = await determine_primary_screen()
     whatToDoNext.screenshot_and_add_to_content(primaryScreen)
     const nextStep = await whatToDoNext.what_to_do_next()
     mainWindow.webContents.send('update-assistant-text', nextStep)
-  })
+  }
 
+  uIOhook.on('mousedown', clickListener)
 
-
-
+  endInstruction = () => {
+    uIOhook.removeListener('mousedown', clickListener)
+    console.log("Successfully ended instruction")
+  }
 
   // try {
   //   const primaryScreen = await determine_primary_screen()
@@ -400,6 +410,9 @@ app.whenReady().then(() => {
   })
 
   ipcMain.on('restart-chat', () => {
+    if (endInstruction) {
+      endInstruction()
+    }
     stillChatting = true
     chat = new ChatState(process.env.GET_RESOURCES_URL || "http://localhost:8000/resources")
     startTutorial(mainWindow)

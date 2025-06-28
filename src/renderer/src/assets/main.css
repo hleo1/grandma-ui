@@ -1,8 +1,8 @@
 html,
 body,
 #root {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   padding: 0;
   margin: 0;
   background-color: transparent;
@@ -20,19 +20,23 @@ body,
 }
 
 .dialogue-box-container {
-  position: absolute;
-  width: 400px;
+  position: relative;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
 .dialogue-box {
-  background-color: rgba(50, 50, 50, 0.8);
+  background-color: rgb(50, 50, 50);
   color: white;
   padding: 20px;
   border-radius: 15px;
   cursor: move;
   font-family: sans-serif;
   font-size: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
 }
 
 .dialogue-box p {
@@ -58,7 +62,7 @@ body,
   padding-left: 50px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: rgba(30, 30, 30, 0.8);
+  background-color: rgb(30, 30, 30);
   color: white;
   resize: none;
   font-family: sans-serif;
@@ -79,7 +83,7 @@ body,
   padding: 12px 20px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, rgba(80, 80, 80, 0.95), rgba(70, 70, 70, 0.9));
+  background: linear-gradient(135deg, rgb(80, 80, 80), rgb(70, 70, 70));
   color: white;
   font-family: sans-serif;
   font-size: 14px;
@@ -91,7 +95,7 @@ body,
 }
 
 .solution-button:hover {
-  background: linear-gradient(135deg, rgba(100, 100, 100, 0.98), rgba(85, 85, 85, 0.95));
+  background: linear-gradient(135deg, rgb(100, 100, 100), rgb(85, 85, 85));
   border: 1px solid rgba(255, 255, 255, 0.4);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -99,7 +103,7 @@ body,
 
 .solution-button:active {
   transform: translateY(0px);
-  background: linear-gradient(135deg, rgba(60, 60, 60, 0.95), rgba(50, 50, 50, 0.9));
+  background: linear-gradient(135deg, rgb(60, 60, 60), rgb(50, 50, 50));
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
@@ -141,7 +145,7 @@ body,
   padding: 8px 16px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: rgba(30, 30, 30, 0.8);
+  background-color: rgb(30, 30, 30);
   color: #ff4444;
   font-family: sans-serif;
   font-size: 14px;
@@ -152,7 +156,7 @@ body,
 }
 
 .restart-button:hover {
-  background-color: rgba(40, 40, 40, 0.9);
+  background-color: rgb(40, 40, 40);
   border: 1px solid rgba(255, 68, 68, 0.3);
 }
 
