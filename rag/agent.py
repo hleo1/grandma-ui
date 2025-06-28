@@ -1,7 +1,5 @@
 from dotenv import load_dotenv
-
 load_dotenv()
-
 
 import db_utils as db
 
@@ -10,11 +8,16 @@ docs = client.collections.get("docs")
 try:
     user_query = input("What would you like to know? -- ")
     response = docs.generate.near_text(
-        query=user_query,
-        limit=3,
-        grouped_task="answer the user's question"
+      query=user_query,
+      limit=2,
+      grouped_task="Answer the user's question about the 311 website and provide relevant links based on the content provided.",
+      grouped_properties=["url", "content"]
+
     )
     print(response.generated)
+    print(f'{'-'*50}')
+    for obj in response.objects:
+      print(obj.properties["content"])
 except Exception as e:
     print(e)
 finally:
