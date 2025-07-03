@@ -1,0 +1,310 @@
+{
+  "pages": [
+    {
+      "page_id": 0,
+      "page_title": "What",
+      "elements": [
+        { "element_id": "problem_detail_dropdown",        "type": "dropdown",      "label": "Problem Detail" },
+        { "element_id": "problem_detail_option_banging",  "type": "dropdown item", "text": "Banging/Pounding" },
+        { "element_id": "date_time_input",                "type": "input",         "label": "Date/Time Observed" },
+        { "element_id": "date_time_calendar_icon",        "type": "icon",          "icon": "calendar" },
+        { "element_id": "describe_problem_textarea",      "type": "textarea",      "label": "Describe the Problem" },
+        { "element_id": "recurring_radio_no",             "type": "radio",         "group": "Is this a recurring problem?", "option": "No/Unknown" },
+        { "element_id": "next_button_what",               "type": "button",        "text": "Next" }
+      ]
+    },
+    {
+      "page_id": 1,
+      "page_title": "Where",
+      "elements": [
+        { "element_id": "address_input",                  "type": "input",         "label": "Address" },
+        { "element_id": "address_magnifier_button",       "type": "button",        "icon": "magnifier" },
+        { "element_id": "location_modal",                 "type": "modal",         "title": "Select a Location" },
+        { "element_id": "location_modal_search_input",    "type": "input",         "label": "Search for an NYC Address" },
+        { "element_id": "location_modal_select_button",   "type": "button",        "text": "Select Address" },
+        { "element_id": "next_button_where",              "type": "button",        "text": "Next" }
+      ]
+    },
+    {
+      "page_id": 2,
+      "page_title": "Who",
+      "elements": [
+        { "element_id": "next_button_who",                "type": "button",        "text": "Next" }
+      ]
+    },
+    {
+      "page_id": 3,
+      "page_title": "Review",
+      "elements": [
+        { "element_id": "captcha_checkbox",               "type": "captcha",       "label": "I'm not a robot" },
+        { "element_id": "complete_submit_button",         "type": "button",        "text": "Complete and Submit" }
+      ]
+    }
+  ],
+
+  "steps": [
+    {
+      "step": 1,
+      "page": 0,
+      "machine": {
+        "action": "click",
+        "element_id": "problem_detail_dropdown"
+      },
+      "success": {
+        "new_elements": [
+          { "element_id": "problem_detail_option_banging", "state": "visible" }
+        ]
+      },
+      "human_readable": {
+        "landmark": "Label text: \"Problem Detail *\"",
+        "action": "Click the dropdown directly below the label",
+        "success": "Dropdown list of options becomes visible"
+      }
+    },
+    {
+      "step": 2,
+      "page": 0,
+      "machine": {
+        "action": "click",
+        "element_id": "problem_detail_option_banging"
+      },
+      "success": { "field_value_equals": "Banging/Pounding" },
+      "human_readable": {
+        "landmark": "Dropdown option text: \"Banging/Pounding\"",
+        "action": "Click the \"Banging/Pounding\" row",
+        "success": "Dropdown closes and field now shows \"Banging/Pounding\""
+      }
+    },
+    {
+      "step": 3,
+      "page": 0,
+      "machine": {
+        "action": "click",
+        "element_id": "date_time_input",
+        "extra": { "alternate_target": "date_time_calendar_icon" }
+      },
+      "success": {
+        "new_elements": [ { "element_type": "calendar popup" } ]
+      },
+      "human_readable": {
+        "landmark": "Label text: \"Date/Time Observed *\"",
+        "action": "Click inside the field or its calendar icon",
+        "success": "Caret visible OR calendar popup appears"
+      }
+    },
+    {
+      "step": 4,
+      "page": 0,
+      "machine": {
+        "action": "type",
+        "element_id": "date_time_input",
+        "value": "7/1/2025 8:07 PM"
+      },
+      "success": { "field_value_equals": "7/1/2025 8:07 PM" },
+      "human_readable": {
+        "landmark": "Date/Time input",
+        "action": "Enter the full timestamp",
+        "success": "Input field value equals \"7/1/2025 8:07 PM\""
+      }
+    },
+    {
+      "step": 5,
+      "page": 0,
+      "machine": {
+        "action": "click",
+        "element_id": "describe_problem_textarea"
+      },
+      "success": {
+        "new_elements": [ { "element_type": "caret", "state": "visible" } ]
+      },
+      "human_readable": {
+        "landmark": "Label text: \"Describe the Problem *\"",
+        "action": "Click inside the textarea",
+        "success": "Caret visible inside textarea"
+      }
+    },
+    {
+      "step": 6,
+      "page": 0,
+      "machine": {
+        "action": "type",
+        "element_id": "describe_problem_textarea",
+        "value": "<complaint text>"
+      },
+      "success": { "field_value_equals": "non-empty" },
+      "human_readable": {
+        "landmark": "Textarea under \"Describe the Problem *\"",
+        "action": "Type the complaint text",
+        "success": "Textarea contains non-empty text"
+      }
+    },
+    {
+      "step": 7,
+      "page": 0,
+      "machine": {
+        "action": "click",
+        "element_id": "recurring_radio_no"
+      },
+      "success": {
+        "new_elements": [
+          { "element_id": "recurring_radio_no", "state": "selected" }
+        ]
+      },
+      "human_readable": {
+        "landmark": "Radio group \"Is this a recurring problem?\"",
+        "action": "Select \"No/Unknown\"",
+        "success": "\"No/Unknown\" radio is selected"
+      }
+    },
+    {
+      "step": 8,
+      "page": 0,
+      "machine": {
+        "action": "click",
+        "element_id": "next_button_what"
+      },
+      "success": { "progress_bar_state": "Where" },
+      "human_readable": {
+        "landmark": "Button text: \"Next\" (bottom-left)",
+        "action": "Click \"Next\"",
+        "success": "Progress bar highlights \"Where\""
+      }
+    },
+    {
+      "step": 9,
+      "page": 1,
+      "machine": {
+        "action": "click",
+        "element_id": "address_input"
+      },
+      "success": {
+        "new_elements": [ { "element_type": "caret", "state": "visible" } ]
+      },
+      "human_readable": {
+        "landmark": "Label text: \"Address *\"",
+        "action": "Click inside the address input",
+        "success": "Caret visible in address field"
+      }
+    },
+    {
+      "step": 10,
+      "page": 1,
+      "machine": {
+        "action": "type",
+        "element_id": "address_input",
+        "value": "55 JOHN STREET, NEW YORK"
+      },
+      "success": { "field_value_equals": "55 JOHN STREET, NEW YORK" },
+      "human_readable": {
+        "landmark": "Address input field",
+        "action": "Type address",
+        "success": "Field shows \"55 JOHN STREET, NEW YORK\""
+      }
+    },
+    {
+      "step": 11,
+      "page": 1,
+      "machine": {
+        "action": "click",
+        "element_id": "address_magnifier_button"
+      },
+      "success": {
+        "new_elements": [ { "element_id": "location_modal", "state": "visible" } ]
+      },
+      "human_readable": {
+        "landmark": "Magnifier button",
+        "action": "Open location modal",
+        "success": "\"Select a Location\" modal appears"
+      }
+    },
+    {
+      "step": 12,
+      "page": 1,
+      "machine": {
+        "action": "type",
+        "element_id": "location_modal_search_input",
+        "value": "55 JOHN STREET, NEW YORK"
+      },
+      "success": { "new_elements": [ { "element_type": "map_pin" } ] },
+      "human_readable": {
+        "landmark": "Modal search box",
+        "action": "Type address & press Enter",
+        "success": "Map recentres / pin appears"
+      }
+    },
+    {
+      "step": 13,
+      "page": 1,
+      "machine": {
+        "action": "click",
+        "element_id": "location_modal_select_button"
+      },
+      "success": {
+        "new_elements": [ { "element_id": "location_modal", "state": "closed" } ]
+      },
+      "human_readable": {
+        "landmark": "\"Select Address\" button",
+        "action": "Confirm location",
+        "success": "Modal closes; address retained"
+      }
+    },
+    {
+      "step": 14,
+      "page": 1,
+      "machine": {
+        "action": "click",
+        "element_id": "next_button_where"
+      },
+      "success": { "progress_bar_state": "Who" },
+      "human_readable": {
+        "landmark": "\"Next\" button on \"Where\" page",
+        "action": "Click \"Next\"",
+        "success": "Progress bar highlights \"Who\""
+      }
+    },
+    {
+      "step": 15,
+      "page": 2,
+      "machine": {
+        "action": "click",
+        "element_id": "next_button_who"
+      },
+      "success": { "progress_bar_state": "Review" },
+      "human_readable": {
+        "landmark": "\"Next\" button on \"Who\" page",
+        "action": "Click \"Next\" (leave form blank)",
+        "success": "Progress bar highlights \"Review\""
+      }
+    },
+    {
+      "step": 16,
+      "page": 3,
+      "machine": {
+        "action": "click",
+        "element_id": "captcha_checkbox"
+      },
+      "success": { "captcha_checked": true },
+      "human_readable": {
+        "landmark": "reCAPTCHA box",
+        "action": "Check \"I'm not a robot\"",
+        "success": "Green checkmark appears"
+      }
+    },
+    {
+      "step": 17,
+      "page": 3,
+      "machine": {
+        "action": "click",
+        "element_id": "complete_submit_button"
+      },
+      "success": {
+        "new_elements": [ { "element_type": "confirmation", "state": "visible" } ]
+      },
+      "human_readable": {
+        "landmark": "\"Complete and Submit\" button",
+        "action": "Submit request",
+        "success": "Confirmation page / request number appears"
+      }
+    }
+  ]
+}
