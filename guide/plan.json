@@ -3,7 +3,7 @@
     {
       "page_id": 0,
       "page_title": "What",
-      "screenshot": 0,
+      "screenshot": "0.png",
       "elements": [
         { "element_id": "problem_detail_dropdown", "type": "dropdown", "label": "Problem Detail" },
         { "element_id": "problem_detail_option_banging", "type": "dropdown item", "text": "Banging/Pounding" },
@@ -17,7 +17,7 @@
     {
       "page_id": 1,
       "page_title": "Where",
-      "screenshot": 3,
+      "screenshot": "3.png",
       "elements": [
         { "element_id": "address_input", "type": "input", "label": "Address" },
         { "element_id": "address_magnifier_button", "type": "button", "icon": "magnifier" },
@@ -30,7 +30,7 @@
     {
       "page_id": 2,
       "page_title": "Who",
-      "screenshot": 6,
+      "screenshot": "6.png",
       "elements": [
         { "element_id": "first_name_input", "type": "input", "label": "First Name" },
         { "element_id": "last_name_input", "type": "input", "label": "Last Name" },
@@ -48,7 +48,7 @@
     {
       "page_id": 3,
       "page_title": "Review",
-      "screenshot": 7,
+      "screenshot": "7.png",
       "elements": [
         { "element_id": "captcha_checkbox", "type": "captcha", "label": "I'm not a robot" },
         { "element_id": "complete_submit_button", "type": "button", "text": "Complete and Submit" }
@@ -63,7 +63,7 @@
       "machine": { "action": "click", "element_id": "problem_detail_dropdown" },
       "success": {
         "visible_elements": [ "problem_detail_option_banging" ],
-        "screenshot": 1
+        "screenshot": "1.png"
       },
       "human_readable": {
         "landmark": "\"Problem Detail *\" dropdown",
@@ -75,7 +75,7 @@
       "step": 2,
       "page": 0,
       "machine": { "action": "click", "element_id": "problem_detail_option_banging" },
-      "success": { "field_value_equals": "Banging/Pounding", "screenshot": 0 },
+      "success": { "field_value_equals": "Banging/Pounding", "screenshot": "0.png" },
       "human_readable": {
         "landmark": "\"Banging/Pounding\" option",
         "action": "Select the option",
@@ -86,7 +86,7 @@
       "step": 3,
       "page": 0,
       "machine": { "action": "click", "element_id": "date_time_input", "extra": { "alternate_target": "date_time_calendar_icon" } },
-      "success": { "visible_elements": [ "calendar popup" ], "screenshot": 2 },
+      "success": { "visible_elements": [ "calendar popup" ], "screenshot": "2.png" },
       "human_readable": {
         "landmark": "\"Date/Time Observed *\" field",
         "action": "Activate calendar or caret",
@@ -141,7 +141,7 @@
       "step": 8,
       "page": 0,
       "machine": { "action": "click", "element_id": "next_button_what" },
-      "success": { "progress_bar_state": "Where", "screenshot": 3 },
+      "success": { "progress_bar_state": "Where", "screenshot": "3.png" },
       "human_readable": {
         "landmark": "\"Next\" button (What page)",
         "action": "Proceed to Where",
@@ -174,7 +174,7 @@
       "step": 11,
       "page": 1,
       "machine": { "action": "click", "element_id": "address_magnifier_button" },
-      "success": { "visible_elements": [ "location_modal" ], "screenshot": 4 },
+      "success": { "visible_elements": [ "location_modal" ], "screenshot": "4.png" },
       "human_readable": {
         "landmark": "Magnifier icon",
         "action": "Open location modal",
@@ -196,7 +196,7 @@
       "step": 13,
       "page": 1,
       "machine": { "action": "click", "element_id": "location_modal_select_button" },
-      "success": { "visible_elements": [ { "element_id": "location_modal", "state": "closed" } ], "screenshot": 5 },
+      "success": { "visible_elements": [ { "element_id": "location_modal", "state": "closed" } ], "screenshot": "5.png" },
       "human_readable": {
         "landmark": "\"Select Address\" button",
         "action": "Confirm selection",
@@ -207,7 +207,7 @@
       "step": 14,
       "page": 1,
       "machine": { "action": "click", "element_id": "next_button_where" },
-      "success": { "progress_bar_state": "Who", "screenshot": 6 },
+      "success": { "progress_bar_state": "Who", "screenshot": "6.png" },
       "human_readable": {
         "landmark": "\"Next\" button (Where page)",
         "action": "Proceed to Who",
@@ -329,7 +329,7 @@
       "step": 25,
       "page": 2,
       "machine": { "action": "click", "element_id": "next_button_who" },
-      "success": { "progress_bar_state": "Review", "screenshot": 7 },
+      "success": { "progress_bar_state": "Review", "screenshot": "7.png" },
       "human_readable": {
         "landmark": "\"Next\" button (Who page)",
         "action": "Advance to Review",
